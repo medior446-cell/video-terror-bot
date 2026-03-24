@@ -1,2 +1,2 @@
 [start]
-cmd = "python bot_video.py"
+"python -u bot_video.py"
