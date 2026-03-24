@@ -12,84 +12,85 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 REPLICATE_API_KEY = os.environ.get("REPLICATE_API_KEY", "")
 
-def generate_horror_image(prompt):
-    """Genera imagen de terror con Flux Schnell (gratis en Replicate)"""
+def generate_horror_video(prompt):
+    """Genera video de terror con Luma AI (hasta 5 segundos)"""
     if not REPLICATE_API_KEY:
         return None, "⚠️ Replicate API no configurada"
     
     try:
         # Mejorar el prompt para hacerlo más terrorífico
-        enhanced_prompt = f"dark horror scene, {prompt}, creepy atmosphere, cinematic lighting, highly detailed, scary, ominous, terrifying, nightmare fuel, photorealistic horror"
+        enhanced_prompt = f"dark horror scene, {prompt}, creepy atmosphere, cinematic lighting, highly detailed, scary, ominous, terrifying, nightmare fuel"
+        
+        logging.info(f"Generando video de terror con Luma AI: {enhanced_prompt}")
         
         output = replicate.run(
-            "black-forest-labs/flux-schnell",
+            "lumalabs/luma-photon",
             input={
                 "prompt": enhanced_prompt,
                 "num_outputs": 1,
                 "aspect_ratio": "16:9",
-                "output_format": "jpg",
-                "output_quality": 90
+                "output_format": "mp4"
             }
         )
         
-        # Replicate devuelve una lista de URLs
         if output and len(output) > 0:
             return output[0], None
-        return None, "No se pudo generar la imagen"
-        
+        else:
+            return None, "No se pudo generar el video"
+            
     except Exception as e:
-        logging.error(f"Error generando imagen: {str(e)}")
-        return None, f"⚠️ Error: {str(e)}"
+        logging.error(f"Error generando video: {str(e)}")
+        return None, f"❌ Error: {str(e)}"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando /start"""
     welcome_msg = (
         "🎬 *GENERADOR DE VIDEOS DE TERROR* 🎬\n\n"
-        "Envíame una descripción y crearé una imagen de terror cinematográfica.\n\n"
+        "Envíame una descripción y crearé un video de terror cinematográfico.\n\n"
         "📹 *Comandos:*\n"
-        "/video [descripción] - Genera imagen de terror\n\n"
+        "/video [descripción] - Genera video de terror\n\n"
         "Ejemplo: /video una casa abandonada en el bosque de noche"
     )
     await update.message.reply_text(welcome_msg, parse_mode='Markdown')
 
 async def video_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Genera imagen de terror"""
+    """Genera video de terror"""
     if not context.args:
         await update.message.reply_text("❌ Debes proporcionar una descripción. Ejemplo:\n/video casa embrujada")
         return
     
     prompt = ' '.join(context.args)
     
-    await update.message.reply_text(f"🎬 Generando imagen de terror: *{prompt}*...", parse_mode='Markdown')
+    await update.message.reply_text(f"🎬 Generando video de terror: *{prompt}*... (puede tardar 1-2 minutos)", parse_mode='Markdown')
     
-    image_url, error = generate_horror_image(prompt)
+    video_url, error = generate_horror_video(prompt)
     
     if error:
         await update.message.reply_text(error)
         return
     
-    if image_url:
-        await update.message.reply_text("✅ Imagen generada! Enviando...")
-        await update.message.reply_photo(photo=image_url, caption=f"🕯️ {prompt}")
+    if video_url:
+        await update.message.reply_text("✅ Video generado! Enviando...")
+        await update.message.reply_video(video=video_url, caption=f"🕯️ {prompt}")
     else:
-        await update.message.reply_text("❌ No se pudo generar la imagen")
+        await update.message.reply_text("❌ No se pudo generar el video")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Maneja mensajes de texto libre"""
     user_text = update.message.text
     
-    await update.message.reply_text("🎬 Generando imagen de terror...", parse_mode='Markdown')Add bot_video.py - Generador de imágenes de terror con Flux
+    await update.message.reply_text("🎬 Generando video de terror... (puede tardar 1-2 minutos)", parse_mode='Markdown')
     
-    image_url, error = generate_horror_image(user_text)
+    video_url, error = generate_horror_video(user_text)
     
     if error:
         await update.message.reply_text(error)
         return
     
-    if image_url:
-        await update.message.reply_photo(photo=image_url, caption=f"🕯️ {user_text}")
+    if video_url:
+        await update.message.reply_video(video=video_url, caption=f"🕯️ {user_text}")
     else:
-        await update.message.reply_text("❌ No se pudo generar la imagen")
+        await update.message.reply_text("❌ No se pudo generar el video")
 
 if __name__ == '__main__':
     if not TELEGRAM_TOKEN:
